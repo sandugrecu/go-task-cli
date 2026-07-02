@@ -1,0 +1,16 @@
+# binaries
+/bin/
+/dist/
+*.exe
+
+# Go build cache
+*.out
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+.env
