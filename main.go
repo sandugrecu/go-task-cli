@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,26 +10,27 @@ import (
 )
 
 type Task struct {
-	content string
-	isDone  bool
+	Content string
+	IsDone  bool
 }
 
-func NewTask(content string) Task {
+func NewTask(Content string) Task {
 	return Task{
-		content: content,
-		isDone:  false,
+		Content: Content,
+		IsDone:  false,
 	}
 }
 
 func main() {
-	tasks := make([]Task, 0)
+	//tasks := make([]Task, 0)
+	tasks := loadTasks("data.json")
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		displayMenu()
+		fmt.Print("Your choise: ")
 		text, _ := reader.ReadString('\n')
 		chosenOption := strings.TrimSpace(text)
-
 		switch chosenOption {
 		case "1":
 			tasks = addTask(tasks, reader)
@@ -54,6 +56,11 @@ func main() {
 			}
 			deleteTask(&tasks, index)
 
+		case "5":
+			saveTasks("data.json", tasks)
+			fmt.Println("Exiting...")
+			os.Exit(0)
+
 		default:
 			fmt.Println("Invalid option! Choose a number in range 1-4.")
 		}
@@ -65,7 +72,8 @@ func displayMenu() {
 1. Add task
 2. List all tasks 
 3. Mark task as completed (By ID)
-4. Delete task (By ID)`)
+4. Delete task (By ID)
+5. Save tasks and exit`)
 }
 
 func addTask(tasks []Task, reader *bufio.Reader) []Task {
@@ -84,11 +92,11 @@ func listTasks(tasks []Task) {
 	fmt.Println("________________________\nAll available tasks:")
 	for index, task := range tasks {
 		status := "incomplete"
-		if task.isDone {
+		if task.IsDone {
 			status = "complete"
 		}
 
-		fmt.Printf("\nTask %d\nTask: %s. \nStatus %s\n", index, task.content, status)
+		fmt.Printf("\nTask %d\nTask: %s. \nStatus %s\n", index, task.Content, status)
 	}
 	fmt.Println("________________________")
 }
@@ -99,7 +107,7 @@ func changeStatus(tasks *[]Task, index int) {
 		return
 	}
 
-	(*tasks)[index].isDone = !(*tasks)[index].isDone
+	(*tasks)[index].IsDone = !(*tasks)[index].IsDone
 }
 
 func deleteTask(tasks *[]Task, index int) {
@@ -119,4 +127,34 @@ func getIndex(reader *bufio.Reader) (int, error) {
 		return 0, err
 	}
 	return index, nil
+}
+
+func loadTasks(filename string) []Task {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println("Could not read file:", err)
+		return []Task{}
+	}
+
+	var tasks []Task
+	err = json.Unmarshal(data, &tasks)
+	if err != nil {
+		fmt.Println("Invalid JSON:", err)
+		return []Task{}
+	}
+	return tasks
+}
+
+func saveTasks(filename string, tasks []Task) {
+	data, err := json.Marshal(tasks)
+	if err != nil {
+		fmt.Println("Could not encode json:", err)
+		return
+	}
+
+	err = os.WriteFile(filename, data, 0644)
+	if err != nil {
+		fmt.Println("Could not write to file:", err)
+		return
+	}
 }
